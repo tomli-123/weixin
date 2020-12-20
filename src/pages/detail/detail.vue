@@ -1,0 +1,218 @@
+<template>
+  <view>
+    <!-- 轮播图 -->
+    <swiper
+      :circular="true"
+      :indicator-dots="true"
+      :autoplay="true"
+      :interval="3000"
+      :duration="1000"
+    >
+      <block v-for="pic in detail.pics" :key="pic.pics_id">
+        <swiper-item>
+          <image mode="aspectFit" :src="pic.pics_mid_url"></image>
+        </swiper-item>
+      </block>
+    </swiper>
+
+    <!-- 价格 -->
+    <view class="price"> ¥ {{ detail.goods_price }} </view>
+    <!-- 标题 -->
+    <view class="title">
+      <view class="left">
+        <view class="content line2">{{ detail.goods_name }}</view>
+      </view>
+      <view class="right">
+        <text class="iconfont icon-shoucang"></text>
+        <text>收藏</text>
+      </view>
+    </view>
+
+    <!-- 图文详情 -->
+    <view class="detail-content">
+      <view>图文详情</view>
+      <!-- <view>{{ detail.goods_introduce }}</view> -->
+      <rich-text :nodes="detail.goods_introduce"></rich-text>
+    </view>
+
+    <!-- 底部 -->
+    <view class="tool">
+      <view class="c1">
+        <text class="iconfont icon-kefu"></text>
+        <text>客服</text>
+      </view>
+      <view class="c1">
+        <text class="iconfont icon-fenxiang"></text>
+        <text>分享</text>
+      </view>
+      <view class="c1" @click="go2cart">
+        <text class="iconfont icon-gouwuchekong"></text>
+        <text>购物车</text>
+      </view>
+      <view class="c2" @click="addCart">
+        加入购物车
+      </view>
+      <view class="c3">
+        立即购买
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      detail: {},
+    }
+  },
+  onLoad(query) {
+    //1. 解构 id
+    const { id } = query
+    //2. 请求详情信息
+    this.getDetail(id)
+  },
+  methods: {
+    // 请求
+    async getDetail(id) {
+      let res = await this.$http({
+        url: '/goods/detail',
+        data: {
+          goods_id: id,
+        },
+      })
+      console.log('详情页:', res)
+      this.detail = res
+    },
+    // 加入购物车
+    addCart() {
+      //1. 先尝试着从 本地获取购物车
+      let carts = uni.getStorageSync('carts') || []
+
+      //2. 尝试着根据当前商品的id, 获取购物车里面对应的商品
+      // 这个 goods 是购物车里面 商品
+      let goods = carts.find(v => v.goods_id == this.detail.goods_id)
+
+      console.log('goods:', goods)
+      // 3. 判断 goods 有没有值,
+      if (goods) {
+        // 之前 有把该商品加入到购物车过
+        goods.goods_price = this.detail.goods_price
+        goods.count++
+      } else {
+        // 之前没有把该商品 加入 到购物车过
+
+        this.detail.count = 1
+        this.detail.isChecked = true
+        carts.push(this.detail)
+      }
+      //4. 再保存 到本地
+      uni.setStorageSync('carts', carts)
+
+      //5. 弹框
+      uni.showToast({
+        title: '加入购物车成功',
+      })
+    },
+    // 跳转到购物车
+    go2cart() {
+      // navigator(组件) + 编程式导航(js)
+      uni.switchTab({
+        url: '/pages/cart/cart',
+      })
+      // uni.navigateTo({
+      //   url :'/pages/cart/cart'
+      // })
+    },
+  },
+}
+</script>
+
+<style lang="less" scoped>
+swiper {
+  width: 750rpx;
+  height: 340rpx;
+  image {
+    width: 750rpx;
+    height: 340rpx;
+  }
+}
+
+.price {
+  height: 80rpx;
+  line-height: 80rpx;
+  background: #fff;
+  padding-left: 30rpx;
+  font-size: 36rpx;
+  color: #ff2a4d;
+}
+
+.title {
+  border-top: 1px solid #666;
+  border-bottom: 1px solid #666;
+  display: flex;
+  .left {
+    flex: 1;
+    // background: pink;
+    .content {
+      border-right: 1px solid #999;
+      margin: 10rpx 0; // 处理border
+      padding: 0 20rpx;
+    }
+  }
+  .right {
+    width: 160rpx;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+}
+
+.detail-content {
+  padding-bottom: 120rpx;
+  view {
+    height: 100rpx;
+    line-height: 100rpx;
+    padding-left: 30rpx;
+    color: #ff2a4d;
+    font-weight: 700;
+    font-size: 40rpx;
+  }
+}
+
+.tool {
+  height: 120rpx;
+  background: #fff;
+  border-top: 1px solid #ccc;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  .c1 {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .c2 {
+    flex: 2;
+    background-color: orange;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    color: #fff;
+  }
+  .c3 {
+    flex: 2;
+    background: #ff2a4d;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    color: #fff;
+  }
+}
+</style>
